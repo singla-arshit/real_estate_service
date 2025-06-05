@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Delete Property - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-red-600 text-center mb-6">Confirm Deletion</h2>
+    
+    <p class="text-gray-700 mb-4">
+        Are you sure you want to delete the property titled 
+        <strong class="text-gray-900">"{{ property.title }}"</strong>?
+    </p>
+    <p class="text-gray-600 mb-6">
+        This action cannot be undone. All associated data, including images and rental agreements (if any are not active or can be safely archived), will be permanently removed.
+    </p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'property_detail' property.id %}" 
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
+                Cancel
+            </a>
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+                Yes, Delete Property
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

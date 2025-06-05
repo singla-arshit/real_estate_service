@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit Notice{% else %}Send New Notice{% endif %} - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-gray-800 text-center mb-8">
+        {% if form.instance.pk %}
+            Edit Notice (ID: {{ form.instance.id }})
+        {% else %}
+            Send a New Notice
+        {% endif %}
+    </h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="space-y-6">
+            {{ form|crispy }}
+        </div>
+
+        <div class="mt-10 flex justify-end space-x-3">
+            <a href="{% if form.instance.pk %}{% url 'notice_detail' form.instance.pk %}{% else %}{% url 'notice_list' %}{% endif %}" 
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
+                Cancel
+            </a>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+                {% if form.instance.pk %}Save Changes{% else %}Send Notice{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Any specific JS for the notice form can go here.
+        // For example, character count for the message, or dynamic fields based on notice type.
+        const messageTextarea = document.getElementById('id_message');
+        if (messageTextarea) {
+            // Example: Add a character counter
+            const charCountDisplay = document.createElement('div');
+            charCountDisplay.classList.add('text-sm', 'text-gray-500', 'mt-1', 'text-right');
+            messageTextarea.parentNode.appendChild(charCountDisplay);
+
+            function updateCharCount() {
+                const maxLength = 1000; // Assuming a max length for the message
+                const currentLength = messageTextarea.value.length;
+                charCountDisplay.textContent = `${currentLength} / ${maxLength}`;
+                if (currentLength > maxLength) {
+                    charCountDisplay.classList.add('text-red-500');
+                    charCountDisplay.classList.remove('text-gray-500');
+                } else {
+                    charCountDisplay.classList.remove('text-red-500');
+                    charCountDisplay.classList.add('text-gray-500');
+                }
+            }
+            messageTextarea.addEventListener('input', updateCharCount);
+            updateCharCount(); // Initial count
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

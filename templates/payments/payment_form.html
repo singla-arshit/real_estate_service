@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit Payment{% else %}Record New Payment{% endif %} - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-gray-800 text-center mb-8">
+        {% if form.instance.pk %}
+            Edit Payment Record (ID: {{ form.instance.id }})
+        {% else %}
+            Record a New Payment
+        {% endif %}
+    </h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="space-y-6">
+            {{ form|crispy }}
+        </div>
+
+        <div class="mt-10 flex justify-end space-x-3">
+            <a href="{% if form.instance.pk %}{% url 'payment_detail' form.instance.pk %}{% else %}{% url 'payment_list' %}{% endif %}" 
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
+                Cancel
+            </a>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+                {% if form.instance.pk %}Save Changes{% else %}Record Payment{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Logic to potentially auto-fill amount based on selected rental agreement
+        const rentalAgreementSelect = document.getElementById('id_rental_agreement');
+        const amountInput = document.getElementById('id_amount');
+
+        if (rentalAgreementSelect && amountInput) {
+            rentalAgreementSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const rentAmount = selectedOption.getAttribute('data-rent-amount');
+                if (rentAmount && !amountInput.value) { // Only fill if amount is empty
+                    amountInput.value = rentAmount;
+                }
+            });
+
+            // Trigger change on load if an agreement is pre-selected (e.g. editing)
+            if (rentalAgreementSelect.value) {
+                const event = new Event('change');
+                rentalAgreementSelect.dispatchEvent(event);
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

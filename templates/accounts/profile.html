@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }}'s Profile - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <div class="flex flex-col md:flex-row items-center md:items-start">
+        <div class="md:mr-8 mb-6 md:mb-0 text-center">
+            {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}'s profile picture" 
+                     class="w-32 h-32 md:w-48 md:h-48 rounded-full object-cover mx-auto shadow-lg">
+            {% else %}
+                <img src="{% static 'images/default_profile.svg' %}" alt="Default profile picture" 
+                     class="w-32 h-32 md:w-48 md:h-48 rounded-full object-cover mx-auto shadow-lg bg-gray-200">
+            {% endif %}
+            <a href="{% url 'edit_profile' %}" class="mt-4 inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">
+                Edit Profile
+            </a>
+        </div>
+        
+        <div class="flex-1">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-gray-600 mb-1"><span class="font-semibold">Username:</span> {{ user.username }}</p>
+            <p class="text-gray-600 mb-1"><span class="font-semibold">Email:</span> {{ user.email }}</p>
+            <p class="text-gray-600 mb-4"><span class="font-semibold">Phone:</span> {{ user.phone_number|default:'Not provided' }}</p>
+
+            <div class="border-t border-gray-200 pt-4">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">Account Type: 
+                    {% if user.is_landlord %}
+                        <span class="text-indigo-600">Landlord</span>
+                    {% elif user.is_tenant %}
+                        <span class="text-green-600">Tenant</span>
+                    {% else %}
+                        <span class="text-gray-500">General User</span>
+                    {% endif %}
+                </h3>
+
+                {% if user.is_landlord and user.landlord_profile %}
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <h4 class="text-lg font-semibold text-indigo-700 mb-2">Landlord Details:</h4>
+                        <p class="text-gray-700"><span class="font-semibold">Company:</span> {{ user.landlord_profile.company_name|default:'N/A' }}</p>
+                        <p class="text-gray-700"><span class="font-semibold">Website:</span> 
+                            {% if user.landlord_profile.website %}
+                                <a href="{{ user.landlord_profile.website }}" target="_blank" class="text-blue-500 hover:underline">{{ user.landlord_profile.website }}</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                        <p class="text-gray-700"><span class="font-semibold">Years of Experience:</span> {{ user.landlord_profile.years_of_experience|default:'N/A' }}</p>
+                        <p class="text-gray-700 mt-2"><span class="font-semibold">Bio:</span></p>
+                        <p class="text-gray-600 text-sm">{{ user.landlord_profile.bio|default:'No bio provided.'|linebreaksbr }}</p>
+                    </div>
+                {% endif %}
+
+                {% if user.is_tenant and user.tenant_profile %}
+                    <div class="bg-green-50 p-4 rounded-lg mt-4">
+                        <h4 class="text-lg font-semibold text-green-700 mb-2">Tenant Details:</h4>
+                        <p class="text-gray-700"><span class="font-semibold">Occupation:</span> {{ user.tenant_profile.occupation|default:'N/A' }}</p>
+                        <p class="text-gray-700"><span class="font-semibold">Preferred Move-in Date:</span> {{ user.tenant_profile.preferred_move_in_date|date:"Y-m-d"|default:'N/A' }}</p>
+                        <p class="text-gray-700"><span class="font-semibold">Number of Occupants:</span> {{ user.tenant_profile.number_of_occupants|default:'N/A' }}</p>
+                        <p class="text-gray-700 mt-2"><span class="font-semibold">Additional Info:</span></p>
+                        <p class="text-gray-600 text-sm">{{ user.tenant_profile.additional_info|default:'No additional info provided.'|linebreaksbr }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-6 border-t border-gray-200 pt-4">
+                <a href="{% url 'password_change' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">Change Password</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% comment %}
+Create a default_profile.svg in static/images if you don't have one.
+Example SVG:
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-full h-full text-gray-400">
+  <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+</svg>
+{% endcomment %}
+
+{% endblock %}

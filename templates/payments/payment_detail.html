@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Details - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl max-w-3xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start mb-6 pb-6 border-b border-gray-200">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Payment Details</h1>
+                <p class="text-gray-500">Payment ID: {{ payment.id }}</p>
+            </div>
+            <div class="mt-3 md:mt-0 text-left md:text-right">
+                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full 
+                    {% if payment.status == 'paid' %}bg-green-100 text-green-800
+                    {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                    {% elif payment.status == 'overdue' %}bg-red-100 text-red-800
+                    {% elif payment.status == 'cancelled' %}bg-gray-100 text-gray-800
+                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                    Status: {{ payment.get_status_display }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
+            <div>
+                <p class="text-sm text-gray-500">Amount</p>
+                <p class="text-2xl font-semibold text-green-600">${{ payment.amount|floatformat:2 }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Due Date</p>
+                <p class="text-lg font-medium text-gray-800">{{ payment.due_date|date:"F d, Y" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Payment Date</p>
+                <p class="text-lg font-medium text-gray-800">{{ payment.payment_date|date:"F d, Y"|default:"Not Paid Yet" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Payment Method</p>
+                <p class="text-lg font-medium text-gray-800">{{ payment.get_payment_method_display|default:"N/A" }}</p>
+            </div>
+        </div>
+
+        <!-- Associated Agreement -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Associated Rental Agreement</h2>
+            <div class="bg-gray-50 p-4 rounded-md">
+                <p><strong class="text-gray-600">Property:</strong> <a href="{% url 'property_detail' payment.rental_agreement.property.id %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.property.title }}</a></p>
+                <p><strong class="text-gray-600">Tenant:</strong> <a href="{% url 'profile_detail' payment.rental_agreement.tenant.user.username %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.tenant.user.get_full_name|default:payment.rental_agreement.tenant.user.username }}</a></p>
+                <p><strong class="text-gray-600">Landlord:</strong> <a href="{% url 'profile_detail' payment.rental_agreement.property.landlord.user.username %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.property.landlord.user.get_full_name|default:payment.rental_agreement.property.landlord.user.username }}</a></p>
+                <p><strong class="text-gray-600">Agreement ID:</strong> <a href="{% url 'rental_agreement_detail' payment.rental_agreement.id %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.id }}</a></p>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        {% if payment.notes %}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Notes</h2>
+            <div class="bg-gray-50 p-4 rounded-md prose max-w-none">
+                {{ payment.notes|linebreaksbr }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Transaction ID -->
+        {% if payment.transaction_id %}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Transaction Details</h2>
+            <p><strong class="text-gray-600">Transaction ID:</strong> {{ payment.transaction_id }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="mt-8 pt-6 border-t border-gray-200 flex flex-wrap gap-3">
+            {% if user.is_authenticated %}
+                {% if user.is_landlord %}
+                    {% if payment.status == 'pending' or payment.status == 'overdue' %}
+                        <form method="post" action="{% url 'mark_payment_completed' payment.id %}" class="inline-block">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow">
+                                <i class="fas fa-check-circle mr-2"></i>Mark as Paid
+                            </button>
+                        </form>
+                    {% endif %}
+                    {% if payment.status != 'paid' and payment.status != 'cancelled' %}
+                        <a href="{% url 'edit_payment' payment.id %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow">
+                            <i class="fas fa-edit mr-2"></i>Edit Payment
+                        </a>
+                    {% endif %}
+                {% elif user.is_tenant and payment.rental_agreement.tenant.user == user %}
+                    {% if payment.status == 'pending' or payment.status == 'overdue' %}
+                        <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow" data-bs-toggle="modal" data-bs-target="#makePaymentModal">
+                            <i class="fas fa-credit-card mr-2"></i>Make Payment (Simulated)
+                        </button>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            <a href="{% if user.is_landlord %}{% url 'payment_list' %}{% elif user.is_tenant %}{% url 'tenant_payment_list' %}{% else %}{% url 'home' %}{% endif %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg shadow">
+                Back to Payment List
+            </a>
+        </div>
+    </div>
+
+    <!-- Make Payment Modal (for Tenant - Simulated) -->
+    {% if user.is_authenticated and user.is_tenant and payment.rental_agreement.tenant.user == user and (payment.status == 'pending' or payment.status == 'overdue') %}
+    <div class="modal fade" id="makePaymentModal" tabindex="-1" aria-labelledby="makePaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" action="{% url 'tenant_make_payment' payment.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title text-xl font-semibold" id="makePaymentModalLabel">Make Payment for ${{ payment.amount|floatformat:2 }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-gray-700 mb-4">This is a simulated payment process. In a real application, this would integrate with a payment gateway.</p>
+                        <div class="mb-3">
+                            <label for="payment_method_modal" class="form-label">Payment Method</label>
+                            <select name="payment_method" id="payment_method_modal" class="form-select">
+                                <option value="credit_card">Credit Card (Simulated)</option>
+                                <option value="bank_transfer">Bank Transfer (Simulated)</option>
+                                <option value="paypal">PayPal (Simulated)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="transaction_id_modal" class="form-label">Simulated Transaction ID</label>
+                            <input type="text" name="transaction_id" id="transaction_id_modal" class="form-control" value="SIM_TRANS_{{ payment.id }}_{% now 'YmdHis' %}" readonly>
+                        </div>
+                        <p class="text-sm text-gray-600">Clicking "Confirm Payment" will mark this payment as 'Paid'.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600">Confirm Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

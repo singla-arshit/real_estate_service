@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Landlord Dashboard - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Landlord Dashboard</h1>
+        <a href="{% url 'create_property' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150">
+            + Add New Property
+        </a>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Total Properties</h3>
+            <p class="text-3xl font-semibold text-indigo-600">{{ properties_count }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Active Rentals</h3>
+            <p class="text-3xl font-semibold text-green-600">{{ rented_properties_count }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Pending Requests</h3>
+            <p class="text-3xl font-semibold text-yellow-500">{{ pending_requests }}</p>
+            {% if pending_requests > 0 %}
+            <a href="{% url 'property_requests' %}" class="text-sm text-indigo-600 hover:underline">View Requests</a>
+            {% endif %}
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-gray-500 text-sm font-medium">Available Properties</h3>
+            <p class="text-3xl font-semibold text-blue-500">{{ available_properties_count }}</p>
+        </div>
+    </div>
+
+    <!-- My Properties -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-700">My Properties</h2>
+            {% if properties %}
+            <a href="{% url 'property_list' %}?owner=me" class="text-sm text-indigo-600 hover:underline">View All</a>
+            {% endif %}
+        </div>
+        {% if properties %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rent</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for property in properties|slice:":5" %} {# Display first 5 properties #}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ property.title }}</div>
+                                    <div class="text-xs text-gray-500">{{ property.address }}, {{ property.city }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full 
+                                        {% if property.status == 'available' %}bg-green-500 text-white{% elif property.status == 'rented' %}bg-blue-600 text-white{% elif property.status == 'maintenance' %}bg-yellow-500 text-white{% else %}bg-gray-500 text-white{% endif %}">
+                                        {% if property.status == 'available' %}
+                                            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                            AVAILABLE
+                                        {% elif property.status == 'rented' %}
+                                            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z"></path></svg>
+                                            RENTED
+                                        {% elif property.status == 'maintenance' %}
+                                            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                                            MAINTENANCE
+                                        {% else %}
+                                            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                            {{ property.get_status_display|upper }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${{ property.rent_amount|floatformat:2 }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    {% with agreement=property.active_agreement %}
+                                        {% if agreement %}
+                                            {{ agreement.tenant.user.get_full_name|default:agreement.tenant.user.username }}
+                                        {% else %}
+                                            <span class="text-gray-400">N/A</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'property_detail' property.id %}" class="text-indigo-600 hover:text-indigo-900 mr-2">View</a>
+                                    <a href="{% url 'edit_property' property.id %}" class="text-yellow-600 hover:text-yellow-900">Edit</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-500">You haven't listed any properties yet. 
+                <a href="{% url 'create_property' %}" class="text-indigo-600 hover:underline">Add your first property now!</a>
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity (Payments & Notices) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Payments -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Recent Payments</h2>
+                {% if recent_payments %}
+                <a href="{% url 'payment_list' %}" class="text-sm text-indigo-600 hover:underline">View All Payments</a>
+                {% endif %}
+            </div>
+            {% if recent_payments %}
+                <ul class="divide-y divide-gray-200">
+                    {% for payment in recent_payments|slice:":5" %}
+                        <li class="py-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">${{ payment.amount|floatformat:2 }} for {{ payment.rental_agreement.property.title }}</p>
+                                    <p class="text-xs text-gray-500">Tenant: {{ payment.rental_agreement.tenant.user.get_full_name|default:payment.rental_agreement.tenant.user.username }} - Due: {{ payment.due_date|date:"M d, Y" }}</p>
+                                </div>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if payment.status == 'paid' %}bg-green-100 text-green-800{% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ payment.get_status_display }}
+                                </span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-500">No payment activity yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Recent Notices -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Recent Notices</h2>
+                 {% if recent_notices %}
+                <a href="{% url 'notice_list' %}" class="text-sm text-indigo-600 hover:underline">View All Notices</a>
+                {% endif %}
+            </div>
+            {% if recent_notices %}
+                <ul class="divide-y divide-gray-200">
+                    {% for notice in recent_notices|slice:":5" %}
+                        <li class="py-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">{{ notice.subject }} ({{ notice.get_notice_type_display }})</p>
+                                    <p class="text-xs text-gray-500">To: {{ notice.rental_agreement.tenant.user.get_full_name|default:notice.rental_agreement.tenant.user.username }} - Sent: {{ notice.created_at|date:"M d, Y" }}</p>
+                                </div>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if notice.status == 'sent' %}bg-blue-100 text-blue-800{% elif notice.status == 'viewed' %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                    {{ notice.get_status_display }}
+                                </span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-500">No notice activity yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

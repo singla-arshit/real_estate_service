@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-12">
+    <div class="text-center">
+        <h1 class="text-4xl font-bold text-gray-800 mb-6">Welcome to Micro Real Estate Management</h1>
+        <p class="text-lg text-gray-600 mb-8">
+            Your one-stop solution for managing rental properties, connecting landlords and tenants seamlessly.
+        </p>
+        <div class="space-x-4">
+            <a href="{% url 'property_list' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                Browse Properties
+            </a>
+            {% if not user.is_authenticated %}
+                <a href="{% url 'register' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Get Started
+                </a>
+            {% elif user.is_landlord %}
+                 <a href="{% url 'landlord_dashboard' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Go to Dashboard
+                </a>
+            {% elif user.is_tenant %}
+                <a href="{% url 'tenant_dashboard' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Go to Dashboard
+                </a>
+            {% else %}
+                 <a href="{% url 'dashboard' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Go to Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-16 grid md:grid-cols-2 gap-8 items-center">
+        <div>
+            <h2 class="text-3xl font-semibold text-gray-800 mb-4">For Landlords</h2>
+            <p class="text-gray-600 mb-4">
+                Easily list your properties, manage tenants, track payments, and send notices. 
+                Our platform simplifies property management, giving you more time to focus on what matters.
+            </p>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                <li>Effortless property listing with image uploads.</li>
+                <li>Comprehensive tenant and lease management.</li>
+                <li>Automated rent payment tracking and reminders.</li>
+                <li>Secure communication and notice delivery.</li>
+            </ul>
+            {% if not user.is_authenticated or not user.is_landlord %}
+            <a href="{% url 'register_landlord' %}" class="mt-6 inline-block bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg">
+                Become a Landlord
+            </a>
+            {% endif %}
+        </div>
+        <div class="text-center">
+            <img src="{% static 'images/landlord_illustration.svg' %}" alt="Landlord Illustration" class="max-w-sm mx-auto md:max-w-md">
+        </div>
+    </div>
+
+    <div class="mt-16 grid md:grid-cols-2 gap-8 items-center">
+        <div class="text-center md:order-2">
+            <img src="{% static 'images/tenant_illustration.svg' %}" alt="Tenant Illustration" class="max-w-sm mx-auto md:max-w-md">
+        </div>
+        <div class="md:order-1">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-4">For Tenants</h2>
+            <p class="text-gray-600 mb-4">
+                Find your next home with ease. Browse listings, submit rental requests, manage your lease, 
+                and communicate with your landlord, all in one place.
+            </p>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                <li>Advanced search and filtering for properties.</li>
+                <li>Simple rental application process.</li>
+                <li>Easy rent payment and history tracking.</li>
+                <li>Direct communication channel with landlords.</li>
+            </ul>
+            {% if not user.is_authenticated or not user.is_tenant %}
+            <a href="{% url 'register_tenant' %}" class="mt-6 inline-block bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
+                Find Your Home
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // You can add page-specific JavaScript here if needed
+</script>
+{% endblock %}

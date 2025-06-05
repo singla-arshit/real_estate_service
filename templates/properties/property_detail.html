@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ property.title }} - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+        <!-- Image Carousel/Gallery -->
+        <div class="relative">
+            {% if property.images.all %}
+                <div id="propertyImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in property.images.all %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ image.image.url }}" class="d-block w-full h-64 md:h-96 object-cover" alt="{{ property.title }} - Image {{ forloop.counter }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if property.images.count > 1 %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#propertyImageCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#propertyImageCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    {% endif %}
+                </div>
+            {% else %}
+                <img src="{% static 'images/default_property_large.svg' %}" alt="Default property image" class="w-full h-64 md:h-96 object-cover bg-gray-200">
+            {% endif %}
+            
+            {% if user.is_authenticated and property.landlord.user == user %}
+                <a href="{% url 'add_property_images' property.id %}" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white text-xs font-semibold py-1 px-3 rounded-full hover:bg-opacity-75 transition">
+                    <i class="fas fa-images mr-1"></i> Manage Images
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="p-6 md:p-8">
+            <!-- Title and Basic Info -->
+            <div class="flex flex-col md:flex-row justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-1">{{ property.title }}</h1>
+                    <p class="text-gray-600 text-lg mb-2"><i class="fas fa-map-marker-alt mr-2 text-indigo-500"></i>{{ property.address }}, {{ property.city }}, {{ property.state }} {{ property.zip_code }}</p>
+                </div>
+                <div class="mt-3 md:mt-0 text-left md:text-right">
+                    <p class="text-3xl font-bold text-green-600 mb-1">${{ property.rent_amount|floatformat:2 }}/month</p>
+                    <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full 
+                        {% if property.status == 'available' %}bg-green-100 text-green-800
+                        {% elif property.status == 'rented' %}bg-blue-100 text-blue-800
+                        {% elif property.status == 'pending' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ property.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Property Features -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 border-t border-b border-gray-200 py-6 my-6">
+                <div>
+                    <p class="text-sm text-gray-500">Type</p>
+                    <p class="text-lg font-semibold text-gray-700"><i class="fas fa-building mr-2 text-indigo-500"></i>{{ property.get_property_type_display }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Bedrooms</p>
+                    <p class="text-lg font-semibold text-gray-700"><i class="fas fa-bed mr-2 text-indigo-500"></i>{{ property.bedrooms }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Bathrooms</p>
+                    <p class="text-lg font-semibold text-gray-700"><i class="fas fa-bath mr-2 text-indigo-500"></i>{{ property.bathrooms }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Area</p>
+                    <p class="text-lg font-semibold text-gray-700"><i class="fas fa-ruler-combined mr-2 text-indigo-500"></i>{{ property.square_feet }} sq ft</p>
+                </div>
+                {% if property.year_built %}
+                <div>
+                    <p class="text-sm text-gray-500">Year Built</p>
+                    <p class="text-lg font-semibold text-gray-700"><i class="fas fa-calendar-alt mr-2 text-indigo-500"></i>{{ property.year_built }}</p>
+                </div>
+                {% endif %}
+                {% if property.parking_available %}
+                <div>
+                    <p class="text-sm text-gray-500">Parking</p>
+                    <p class="text-lg font-semibold text-gray-700"><i class="fas fa-parking mr-2 text-indigo-500"></i>Available</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-3">Description</h2>
+                <p class="text-gray-600 leading-relaxed">{{ property.description|linebreaksbr }}</p>
+            </div>
+
+            <!-- Amenities -->
+            {% if property.amenities %}
+            <div class="mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-3">Amenities</h2>
+                <div class="flex flex-wrap gap-2">
+                    {% for amenity in property.amenities_list %}
+                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">{{ amenity }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Landlord Information -->
+            <div class="bg-indigo-50 p-6 rounded-lg mb-6">
+                <h2 class="text-xl font-semibold text-indigo-700 mb-3">Landlord Information</h2>
+                <div class="flex items-center">
+                    {% if property.landlord.user.profile_picture %}
+                        <img src="{{ property.landlord.user.profile_picture.url }}" alt="{{ property.landlord.user.username }}" class="w-16 h-16 rounded-full object-cover mr-4">
+                    {% else %}
+                        <img src="{% static 'images/default_profile.svg' %}" alt="Default profile picture" class="w-16 h-16 rounded-full object-cover mr-4 bg-gray-300">
+                    {% endif %}
+                    <div>
+                        <p class="text-lg font-semibold text-gray-800">{{ property.landlord.user.get_full_name|default:property.landlord.user.username }}</p>
+                        <p class="text-sm text-gray-600">{{ property.landlord.company_name|default:"Independent Landlord" }}</p>
+                        {% if property.landlord.user.phone_number %}
+                        <p class="text-sm text-gray-600"><i class="fas fa-phone-alt mr-1"></i> {{ property.landlord.user.phone_number }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                {% if user.is_authenticated %}
+                    {% if property.landlord.user == user %}
+                        <div class="flex space-x-3">
+                            <a href="{% url 'edit_property' property.id %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow transition duration-150">
+                                <i class="fas fa-edit mr-2"></i>Edit Property
+                            </a>
+                            <a href="{% url 'delete_property' property.id %}" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow transition duration-150" onclick="return confirm('Are you sure you want to delete this property?');">
+                                <i class="fas fa-trash-alt mr-2"></i>Delete Property
+                            </a>
+                        </div>
+                    {% elif user.is_tenant and property.status == 'available' %}
+                        {% if existing_request %}
+                            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
+                                <p class="font-bold">Request Pending</p>
+                                <p>You have already submitted a request for this property on {{ existing_request.request_date|date:"M d, Y" }}. Status: {{ existing_request.get_status_display }}.</p>
+                                {% if existing_request.status == 'pending' %}
+                                <a href="{% url 'property_request_detail' existing_request.id %}" class="text-sm text-yellow-800 hover:underline font-semibold mt-2 inline-block">View Request Details</a>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow transition duration-150" data-bs-toggle="modal" data-bs-target="#requestPropertyModal">
+                                <i class="fas fa-file-signature mr-2"></i>Request to Rent
+                            </button>
+                        {% endif %}
+                    {% elif property.status == 'rented' %}
+                        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md" role="alert">
+                            <p class="font-bold">Property Rented</p>
+                            <p>This property is currently rented. {% if active_agreement_for_this_property and active_agreement_for_this_property.tenant.user == user %}You are the current tenant.{% endif %}</p>
+                        </div>
+                    {% elif property.status == 'pending' %}
+                         <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
+                            <p class="font-bold">Property Pending</p>
+                            <p>This property is currently pending a rental agreement.</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="text-gray-600">Please <a href="{% url 'login' %}?next={{ request.path }}" class="text-indigo-600 hover:underline">login</a> or <a href="{% url 'register' %}?next={{ request.path }}" class="text-indigo-600 hover:underline">register as a tenant</a> to request this property.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Request Modal (for Tenants) -->
+    {% if user.is_authenticated and user.is_tenant and property.status == 'available' and not existing_request %}
+    <div class="modal fade" id="requestPropertyModal" tabindex="-1" aria-labelledby="requestPropertyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" action="{% url 'request_property' property.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title text-xl font-semibold" id="requestPropertyModalLabel">Request to Rent: {{ property.title }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-gray-700 mb-4">Please confirm your interest in renting this property. You can add a message to the landlord and specify your preferred move-in date.</p>
+                        {{ request_form|crispy }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% comment %}
+Make sure you have Font Awesome and Bootstrap JS (for carousel and modal) included in your base.html.
+Example default_property_large.svg (can be same as default_property.svg or a larger version):
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-gray-300">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.125 1.125 0 011.591 0L21.75 12M2.25 12a8.955 8.955 0 011.591-1.591L12 2.25l8.159 8.159a8.955 8.955 0 011.591 1.591M2.25 12l8.954 8.955A1.125 1.125 0 0012.75 21.75h.511A1.125 1.125 0 0014.852 20.9L21.75 12M2.25 12h19.5M12 12.75V21.75M8.25 21.75h7.5M12 2.25v10.5" />
+</svg>
+{% endcomment %}
+
+{% endblock %}

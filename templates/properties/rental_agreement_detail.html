@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rental Agreement Details - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start mb-6 pb-6 border-b border-gray-200">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Rental Agreement</h1>
+                <p class="text-gray-500">Agreement ID: {{ agreement.id }}</p>
+            </div>
+            <div class="mt-3 md:mt-0 text-left md:text-right">
+                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full 
+                    {% if agreement.status == 'active' %}bg-green-100 text-green-800
+                    {% elif agreement.status == 'pending' %}bg-yellow-100 text-yellow-800
+                    {% elif agreement.status == 'terminated' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    Status: {{ agreement.get_status_display }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Property Details -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Property Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 bg-gray-50 p-4 rounded-md">
+                <p><strong class="text-gray-600">Property:</strong> <a href="{% url 'property_detail' agreement.property.id %}" class="text-indigo-600 hover:underline">{{ agreement.property.title }}</a></p>
+                <p><strong class="text-gray-600">Address:</strong> {{ agreement.property.address }}, {{ agreement.property.city }}</p>
+                <p><strong class="text-gray-600">Type:</strong> {{ agreement.property.get_property_type_display }}</p>
+                <p><strong class="text-gray-600">Landlord:</strong> <a href="{% url 'profile_detail' agreement.property.landlord.user.username %}" class="text-indigo-600 hover:underline">{{ agreement.property.landlord.user.get_full_name|default:agreement.property.landlord.user.username }}</a></p>
+            </div>
+        </div>
+
+        <!-- Tenant Details -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Tenant Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 bg-gray-50 p-4 rounded-md">
+                <p><strong class="text-gray-600">Tenant:</strong> <a href="{% url 'profile_detail' agreement.tenant.user.username %}" class="text-indigo-600 hover:underline">{{ agreement.tenant.user.get_full_name|default:agreement.tenant.user.username }}</a></p>
+                <p><strong class="text-gray-600">Email:</strong> {{ agreement.tenant.user.email }}</p>
+                <p><strong class="text-gray-600">Phone:</strong> {{ agreement.tenant.user.phone_number|default:'N/A' }}</p>
+            </div>
+        </div>
+
+        <!-- Agreement Terms -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Agreement Terms</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                    <p class="text-sm text-gray-500">Start Date</p>
+                    <p class="text-lg font-medium text-gray-800">{{ agreement.start_date|date:"F d, Y" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">End Date</p>
+                    <p class="text-lg font-medium text-gray-800">{{ agreement.end_date|date:"F d, Y" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Monthly Rent</p>
+                    <p class="text-lg font-medium text-green-600">${{ agreement.rent_amount|floatformat:2 }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Security Deposit</p>
+                    <p class="text-lg font-medium text-yellow-600">${{ agreement.security_deposit|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agreement Document -->
+        {% if agreement.agreement_document %}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Agreement Document</h2>
+            <a href="{{ agreement.agreement_document.url }}" target="_blank" class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow">
+                <i class="fas fa-file-pdf mr-2"></i> View/Download Document
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Additional Terms/Notes -->
+        {% if agreement.notes %}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Additional Notes/Terms</h2>
+            <div class="bg-gray-50 p-4 rounded-md prose max-w-none">
+                {{ agreement.notes|linebreaksbr }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            {% if user.is_authenticated %}
+                {% if agreement.property.landlord.user == user and agreement.status != 'terminated' %}
+                    <a href="{% url 'edit_rental_agreement' agreement.id %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow mr-3">
+                        <i class="fas fa-edit mr-2"></i>Edit Agreement
+                    </a>
+                    {% if agreement.status == 'active' %}
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#terminateAgreementModal" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow">
+                        <i class="fas fa-times-circle mr-2"></i>Terminate Agreement
+                    </button>
+                    {% endif %}
+                {% elif agreement.tenant.user == user %}
+                    <a href="{% url 'tenant_payment_list' %}?agreement_id={{ agreement.id }}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow mr-3">
+                        <i class="fas fa-money-bill-wave mr-2"></i>View Payments
+                    </a>
+                     <a href="{% url 'tenant_notice_list' %}?agreement_id={{ agreement.id }}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow">
+                        <i class="fas fa-bell mr-2"></i>View Notices
+                    </a>
+                {% endif %}
+            {% endif %}
+            <a href="{% if user.is_landlord %}{% url 'landlord_dashboard' %}{% elif user.is_tenant %}{% url 'tenant_dashboard' %}{% else %}{% url 'property_list' %}{% endif %}" class="ml-4 text-gray-600 hover:text-gray-800 font-semibold">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Terminate Agreement Modal (for Landlord) -->
+    {% if user.is_authenticated and agreement.property.landlord.user == user and agreement.status == 'active' %}
+    <div class="modal fade" id="terminateAgreementModal" tabindex="-1" aria-labelledby="terminateAgreementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" action="{% url 'terminate_rental_agreement' agreement.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title text-xl font-semibold text-red-600" id="terminateAgreementModalLabel">Confirm Termination</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-gray-700 mb-3">Are you sure you want to terminate this rental agreement for <strong>{{ agreement.property.title }}</strong> with tenant <strong>{{ agreement.tenant.user.get_full_name|default:agreement.tenant.user.username }}</strong>?</p>
+                        <p class="text-sm text-gray-600">This action will mark the agreement as 'Terminated'. Please ensure all outstanding matters (e.g., final payments, property handover) are addressed.</p>
+                        <div class="mt-4">
+                            <label for="termination_reason" class="block text-sm font-medium text-gray-700">Reason for Termination (Optional)</label>
+                            <textarea name="termination_reason" id="termination_reason" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger bg-red-600 hover:bg-red-700 border-red-600 hover:border-red-700">Yes, Terminate Agreement</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

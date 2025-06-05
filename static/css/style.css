@@ -1,0 +1,47 @@
+/* Custom Styles for Micro Real Estate Management */
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.alert-success {
+    background-color: #d1e7dd; /* Bootstrap success green */
+    border-color: #badbcc;
+    color: #0f5132;
+}
+
+.alert-error {
+    background-color: #f8d7da; /* Bootstrap danger red */
+    border-color: #f5c2c7;
+    color: #842029;
+}
+
+.alert-info {
+    background-color: #cff4fc; /* Bootstrap info cyan */
+    border-color: #b6effb;
+    color: #055160;
+}
+
+.alert-warning {
+    background-color: #fff3cd; /* Bootstrap warning yellow */
+    border-color: #ffecb5;
+    color: #664d03;
+}
+
+/* Tailwind utility classes can be used directly in HTML for most styling.
+   This file is for styles that are harder to achieve with utility classes
+   or for global overrides if necessary. */
+
+/* Example: Style for a custom component */
+/*
+.custom-card {
+    @apply bg-white rounded-lg shadow-md p-6;
+}
+*/
+
+/* Ensure footer is at the bottom */
+main {
+    flex-grow: 1;
+}
