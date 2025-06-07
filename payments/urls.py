@@ -11,10 +11,15 @@ urlpatterns = [
     
     # Tenant payment views
     # path('tenant/', views.tenant_payments, name='tenant_payments'), # This view seems to be payment_list filtered for tenant
-    path('tenant/make/<int:payment_id>/', views.tenant_make_payment, name='make_payment'),
+    path('tenant/make/<int:payment_id>/', views.tenant_make_payment, name='tenant_make_payment'),
+    
+    # Property payment management
+    path('property/<int:property_id>/payment-details/', views.manage_payment_details, name='manage_payment_details'),
+    path('property/<int:property_id>/payment-history/', views.property_payment_history, name='property_payment_history'),
     
     # Notice management
     path('notices/', views.notice_list, name='notice_list'),
+    path('notices/create/', views.select_agreement_for_notice, name='select_agreement_for_notice'),
     path('notices/<int:notice_id>/', views.notice_detail, name='notice_detail'),
     path('notices/create/<int:agreement_id>/', views.create_notice, name='create_notice'),
     path('notices/<int:notice_id>/edit/', views.edit_notice, name='edit_notice'),

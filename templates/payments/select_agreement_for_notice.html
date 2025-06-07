@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Select Rental Agreement for Notice{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Select Rental Agreement for Notice</h1>
+    
+    {% if rental_agreements %}
+        <div class="row">
+            {% for agreement in rental_agreements %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ agreement.property.name }}</h5>
+                            {% if is_landlord %}
+                                <p class="card-text"><strong>Tenant:</strong> {{ agreement.tenant.user.get_full_name }}</p>
+                            {% elif is_tenant %}
+                                <p class="card-text"><strong>Landlord:</strong> {{ agreement.property.landlord.user.get_full_name }}</p>
+                            {% endif %}
+                            <p class="card-text"><strong>Address:</strong> {{ agreement.property.address }}</p>
+                            <p class="card-text"><strong>Rent Amount:</strong> ₹{{ agreement.rent_amount }}</p>
+                            <p class="card-text"><strong>Start Date:</strong> {{ agreement.start_date }}</p>
+                            <p class="card-text"><strong>End Date:</strong> {{ agreement.end_date }}</p>
+                            <a href="{% url 'create_notice' agreement_id=agreement.id %}" class="btn btn-primary">Create Notice for this Agreement</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>You don't have any active rental agreements. You need an active rental agreement to create a notice.</p>
+        </div>
+    {% endif %}
+    
+    <div class="mt-3">
+        <a href="{% url 'notice_list' %}" class="btn btn-secondary">Back to Notices</a>
+    </div>
+</div>
+{% endblock %}

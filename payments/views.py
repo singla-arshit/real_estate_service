@@ -3,40 +3,82 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponseForbidden
-from .models import Payment, Notice
-from .forms import PaymentForm, NoticeForm
-from properties.models import RentalAgreement
+from django.core.exceptions import ValidationError
+from .models import Payment, Notice, PaymentDetail
+from .forms import PaymentForm, NoticeForm, PaymentDetailForm
+from properties.models import RentalAgreement, Property
 from accounts.models import Landlord, Tenant
 
 
 @login_required
 def payment_list(request):
     """View for listing payments."""
-    if request.user.is_landlord:
-        # Landlords see payments for all their properties
+    is_landlord = request.user.is_landlord
+    is_tenant = request.user.is_tenant
+    
+    # Filter payments based on user type
+    if is_landlord:
         landlord = get_object_or_404(Landlord, user=request.user)
-        payments = Payment.objects.filter(
+        payments = Payment.objects.select_related('rental_agreement', 'rental_agreement__property', 'rental_agreement__tenant').filter(
             rental_agreement__property__landlord=landlord
-        ).order_by('-due_date')
-    elif request.user.is_tenant:
-        # Tenants see only their payments
+        )
+        # Only include properties that have at least one rental agreement
+        properties = Property.objects.filter(
+            landlord=landlord,
+            rental_agreements__isnull=False
+        ).distinct()
+    elif is_tenant:
         tenant = get_object_or_404(Tenant, user=request.user)
-        payments = Payment.objects.filter(
+        payments = Payment.objects.select_related('rental_agreement', 'rental_agreement__property').filter(
             rental_agreement__tenant=tenant
-        ).order_by('-due_date')
+        )
+        # Only include properties that have active rental agreements for the tenant
+        properties = Property.objects.filter(
+            rental_agreements__tenant=tenant,
+            rental_agreements__isnull=False
+        ).distinct()
     else:
         messages.error(request, 'You do not have permission to view payments.')
         return redirect('dashboard')
     
-    # Filter by status if specified
-    status = request.GET.get('status')
-    if status:
-        payments = payments.filter(status=status)
+    # Apply filters
+    status_filter = request.GET.get('status')
+    property_filter = request.GET.get('property')
+    month_filter = request.GET.get('month')
     
-    return render(request, 'payments/payment_list.html', {
+    if status_filter and status_filter != 'all':
+        payments = payments.filter(status=status_filter)
+    
+    if property_filter and property_filter != 'all':
+        payments = payments.filter(rental_agreement__property_id=property_filter)
+    
+    if month_filter and month_filter != 'all':
+        try:
+            month, year = month_filter.split('-')
+            payments = payments.filter(due_date__month=month, due_date__year=year)
+        except ValueError:
+            pass
+    
+    # Order by due date (most recent first)
+    payments = payments.order_by('-due_date')
+    
+    # Get unique months for the filter dropdown
+    months = payments.dates('due_date', 'month', order='DESC')
+    month_choices = [(d.strftime('%m-%Y'), d.strftime('%B %Y')) for d in months]
+    
+    context = {
         'payments': payments,
-        'status_choices': Payment.PAYMENT_STATUS_CHOICES,
-    })
+        'properties': properties,
+        'is_landlord': is_landlord,
+        'is_tenant': is_tenant,
+        'status_filter': status_filter or 'all',
+        'property_filter': property_filter or 'all',
+        'month_filter': month_filter or 'all',
+        'month_choices': month_choices,
+        'payment_status_choices': Payment.PAYMENT_STATUS_CHOICES,
+    }
+    
+    return render(request, 'payments/payment_list.html', context)
 
 
 @login_required
@@ -69,9 +111,9 @@ def create_payment(request, agreement_id=None):
         return redirect('payment_list')
     
     landlord = get_object_or_404(Landlord, user=request.user)
+    rental_agreement = None
     
-    # If agreement_id is provided, pre-select that agreement
-    initial_data = {}
+    # Handle GET request or invalid form
     if agreement_id:
         rental_agreement = get_object_or_404(RentalAgreement, id=agreement_id)
         
@@ -79,22 +121,73 @@ def create_payment(request, agreement_id=None):
         if rental_agreement.property.landlord != landlord:
             messages.error(request, 'You do not have permission to create payments for this agreement.')
             return redirect('payment_list')
-        
-        initial_data['rental_agreement'] = rental_agreement
-        initial_data['amount'] = rental_agreement.rent_amount
+    
+    # Set initial data
+    initial_data = {}
+    if rental_agreement:
+        today = timezone.now().date()
+        initial_data = {
+            'rental_agreement': rental_agreement.id,
+            'amount': rental_agreement.rent_amount,
+            'payment_date': today.strftime('%Y-%m-%d'),
+            'due_date': today.strftime('%Y-%m-%d'),
+            'status': 'paid',
+            'payment_method': 'bank_transfer'
+        }
     
     if request.method == 'POST':
-        form = PaymentForm(request.POST, landlord=landlord)
+        # Create a copy of the POST data to modify
+        post_data = request.POST.copy()
+        
+        # Ensure the rental_agreement is set in POST data
+        if 'rental_agreement' not in post_data and rental_agreement:
+            post_data['rental_agreement'] = rental_agreement.id
+            
+        form = PaymentForm(post_data, request.FILES, landlord=landlord)
+        
         if form.is_valid():
-            payment = form.save(commit=False)
-            payment.created_by = request.user
-            payment.save()
-            messages.success(request, 'Payment created successfully!')
-            return redirect('payment_detail', payment_id=payment.id)
+            try:
+                payment = form.save(commit=False)
+                payment.created_by = request.user
+                
+                # Ensure required fields are set
+                if not payment.payment_date:
+                    payment.payment_date = timezone.now().date()
+                if not payment.due_date:
+                    payment.due_date = timezone.now().date()
+                if not payment.status:
+                    payment.status = 'paid'
+                
+                payment.save()
+                
+                messages.success(
+                    request,
+                    f'Payment of ${payment.amount} has been successfully recorded for {payment.rental_agreement.property.title}.'
+                )
+                
+                return redirect('property_detail', property_id=payment.rental_agreement.property.id)
+                
+            except Exception as e:
+                messages.error(request, f'Error saving payment: {str(e)}')
+        else:
+            # Add form errors to messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+                    
+            # If form is invalid, re-render with the same data
+            return render(request, 'payments/payment_form.html', {
+                'form': form,
+                'rental_agreement': rental_agreement
+            })
     else:
         form = PaymentForm(initial=initial_data, landlord=landlord)
     
-    return render(request, 'payments/create_payment.html', {'form': form})
+    # For GET requests, show the form
+    return render(request, 'payments/payment_form.html', {
+        'form': form,
+        'rental_agreement': rental_agreement
+    })
 
 
 @login_required
@@ -141,14 +234,15 @@ def mark_payment_completed(request, payment_id):
         messages.error(request, 'You do not have permission to mark this payment as completed.')
         return redirect('payment_detail', payment_id=payment_id)
     
-    if request.method == 'POST':
-        payment.status = 'paid'
-        payment.payment_date = timezone.now().date()
-        payment.save()
-        messages.success(request, 'Payment marked as completed successfully!')
-        return redirect('payment_detail', payment_id=payment_id)
+    # Mark payment as paid and update payment date
+    payment.status = 'paid'
+    payment.payment_date = timezone.now().date()
+    payment.save()
     
-    return render(request, 'payments/mark_payment_completed.html', {'payment': payment})
+    messages.success(request, 'Payment has been successfully marked as paid!')
+    
+    # Redirect back to the payment detail page
+    return redirect('payment_detail', payment_id=payment_id)
 
 
 @login_required
@@ -164,8 +258,11 @@ def tenant_make_payment(request, payment_id):
     
     # Don't allow paying already completed payments
     if payment.status == 'paid':
-        messages.error(request, 'This payment has already been completed.')
+        messages.error(request, 'This payment has already been paid.')
         return redirect('payment_detail', payment_id=payment_id)
+    
+    # Get payment details for this property if available
+    payment_details = PaymentDetail.objects.filter(property=rental_agreement.property).first()
     
     if request.method == 'POST':
         # In a real application, this would integrate with a payment gateway
@@ -176,7 +273,10 @@ def tenant_make_payment(request, payment_id):
         messages.success(request, 'Payment completed successfully!')
         return redirect('payment_detail', payment_id=payment_id)
     
-    return render(request, 'payments/tenant_make_payment.html', {'payment': payment})
+    return render(request, 'payments/tenant_make_payment.html', {
+        'payment': payment,
+        'payment_details': payment_details
+    })
 
 
 @login_required
@@ -205,7 +305,7 @@ def notice_list(request):
     
     return render(request, 'payments/notice_list.html', {
         'notices': notices,
-        'status_choices': Notice.STATUS_CHOICES,
+        'status_choices': Notice.NOTICE_STATUS_CHOICES,
     })
 
 
@@ -232,6 +332,39 @@ def notice_detail(request, notice_id):
 
 
 @login_required
+def select_agreement_for_notice(request):
+    """View for selecting a rental agreement before creating a notice."""
+    # Both landlords and tenants can create notices
+    if not (request.user.is_landlord or request.user.is_tenant):
+        messages.error(request, 'You do not have permission to create notices.')
+        return redirect('notice_list')
+    
+    # Get active rental agreements based on user type
+    if request.user.is_landlord:
+        landlord = get_object_or_404(Landlord, user=request.user)
+        rental_agreements = RentalAgreement.objects.filter(
+            property__landlord=landlord,
+            status='active'
+        ).select_related('property', 'tenant', 'tenant__user')
+    elif request.user.is_tenant:
+        tenant = get_object_or_404(Tenant, user=request.user)
+        rental_agreements = RentalAgreement.objects.filter(
+            tenant=tenant,
+            status='active'
+        ).select_related('property', 'property__landlord', 'property__landlord__user')
+    
+    # If there's only one active agreement, redirect directly to create_notice
+    if rental_agreements.count() == 1:
+        return redirect('create_notice', agreement_id=rental_agreements.first().id)
+    
+    return render(request, 'payments/select_agreement_for_notice.html', {
+        'rental_agreements': rental_agreements,
+        'is_landlord': request.user.is_landlord,
+        'is_tenant': request.user.is_tenant
+    })
+
+
+@login_required
 def create_notice(request, agreement_id=None):
     """View for creating a new notice."""
     # Both landlords and tenants can create notices
@@ -241,6 +374,8 @@ def create_notice(request, agreement_id=None):
     
     # If agreement_id is provided, pre-select that agreement
     initial_data = {}
+    rental_agreement = None
+    
     if agreement_id:
         rental_agreement = get_object_or_404(RentalAgreement, id=agreement_id)
         
@@ -255,17 +390,35 @@ def create_notice(request, agreement_id=None):
         initial_data['rental_agreement'] = rental_agreement
     
     if request.method == 'POST':
-        form = NoticeForm(request.POST, user=request.user)
+        form = NoticeForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             notice = form.save(commit=False)
             notice.created_by = request.user
-            notice.save()
-            messages.success(request, 'Notice created successfully!')
-            return redirect('notice_detail', notice_id=notice.id)
+            
+            # Set sender and recipient based on user type
+            if request.user.is_landlord:
+                notice.sender_landlord = request.user.landlord_profile
+                if rental_agreement:
+                    notice.recipient_tenant = rental_agreement.tenant
+            elif request.user.is_tenant:
+                notice.sender_tenant = request.user.tenant_profile
+                if rental_agreement:
+                    notice.recipient_landlord = rental_agreement.property.landlord
+            
+            try:
+                notice.full_clean()  # This will trigger the model's clean() method
+                notice.save()
+                messages.success(request, 'Notice created successfully!')
+                return redirect('notice_detail', notice_id=notice.id)
+            except ValidationError as e:
+                form.add_error(None, e)
     else:
         form = NoticeForm(initial=initial_data, user=request.user)
     
-    return render(request, 'payments/create_notice.html', {'form': form})
+    return render(request, 'payments/notice_form.html', {
+        'form': form,
+        'rental_agreement': rental_agreement
+    })
 
 
 @login_required
@@ -293,7 +446,7 @@ def edit_notice(request, notice_id):
     else:
         form = NoticeForm(instance=notice, user=request.user)
     
-    return render(request, 'payments/edit_notice.html', {
+    return render(request, 'payments/notice_form.html', {
         'form': form,
         'notice': notice
     })
@@ -352,3 +505,72 @@ def landlord_notices(request):
     ).order_by('-created_at')
     
     return render(request, 'payments/landlord_notices.html', {'notices': notices})
+
+
+@login_required
+def manage_payment_details(request, property_id):
+    """View for landlords to manage payment details for a property."""
+    property_obj = get_object_or_404(Property, id=property_id)
+    
+    # Check if the user is the landlord of this property
+    if not request.user.is_landlord or property_obj.landlord.user != request.user:
+        messages.error(request, 'You do not have permission to manage payment details for this property.')
+        return redirect('property_detail', property_id=property_id)
+    
+    # Get or create payment details for this property
+    payment_details, created = PaymentDetail.objects.get_or_create(property=property_obj)
+    
+    if request.method == 'POST':
+        form = PaymentDetailForm(request.POST, request.FILES, instance=payment_details, property_obj=property_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Payment details updated successfully!')
+            return redirect('property_detail', property_id=property_id)
+    else:
+        form = PaymentDetailForm(instance=payment_details, property_obj=property_obj)
+    
+    return render(request, 'payments/manage_payment_details.html', {
+        'property': property_obj,
+        'payment_details': payment_details,
+        'form': form
+    })
+
+
+@login_required
+def property_payment_history(request, property_id):
+    """View for displaying payment history for a specific property."""
+    property_obj = get_object_or_404(Property, id=property_id)
+    
+    # Check if the user is the landlord of this property or a tenant with an active agreement
+    is_landlord = request.user.is_landlord and property_obj.landlord.user == request.user
+    is_tenant = False
+    
+    if request.user.is_tenant:
+        tenant = request.user.tenant_profile
+        active_agreement = RentalAgreement.objects.filter(
+            property=property_obj,
+            tenant=tenant,
+            status='active'
+        ).first()
+        if active_agreement:
+            is_tenant = True
+    
+    if not (is_landlord or is_tenant):
+        messages.error(request, 'You do not have permission to view payment history for this property.')
+        return redirect('dashboard')
+    
+    # Get all payments for this property
+    payments = Payment.objects.filter(
+        rental_agreement__property=property_obj
+    ).order_by('-due_date')
+    
+    # Get payment details for this property
+    payment_details = PaymentDetail.objects.filter(property=property_obj).first()
+    
+    return render(request, 'payments/property_payment_history.html', {
+        'property': property_obj,
+        'payments': payments,
+        'payment_details': payment_details,
+        'is_landlord': is_landlord,
+        'is_tenant': is_tenant
+    })

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Rental Agreement - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-gray-800 text-center mb-8">
+        Edit Rental Agreement for {{ property.title }}
+    </h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="space-y-6">
+            {{ form|crispy }}
+        </div>
+
+        <div class="mt-10 flex justify-end space-x-3">
+            <a href="{% url 'agreement_detail' agreement.id %}" 
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
+                Cancel
+            </a>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // If you have a date picker library, initialize it here for date fields.
+        // For example, using flatpickr:
+        // flatpickr("input[type='date']", {});
+        // flatpickr(".datepicker", {}); // If you add a 'datepicker' class to your date inputs
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

@@ -170,6 +170,164 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Payment History and Notices Section (for rented properties) -->
+        {% if active_agreement and property.status == 'rented' and is_landlord or is_tenant %}
+        <div class="mt-8 bg-white rounded-lg shadow-xl overflow-hidden">
+            <div class="p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Rental Management</h2>
+                
+                <!-- Tabs for Payment History and Notices -->
+                <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-gray-200 mb-6" id="rentalTabs" role="tablist">
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 rounded-t-lg border-b-2 border-indigo-600 text-indigo-600 active" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="true">Payment History</button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300" id="notices-tab" data-bs-toggle="tab" data-bs-target="#notices" type="button" role="tab" aria-controls="notices" aria-selected="false">Notices</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="rentalTabContent">
+                    <!-- Payment History Tab -->
+                    <div class="tab-pane fade show active" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-700">Payment History</h3>
+                            <div class="flex space-x-2">
+                                <a href="{% url 'property_payment_history' property.id %}" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150">
+                                    <i class="fas fa-history mr-1"></i> Full Payment History
+                                </a>
+                                {% if is_landlord %}
+                                <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                                    <i class="fas fa-plus mr-1"></i> Record New Payment
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if is_landlord %}
+                        <div class="mb-4">
+                            <a href="{% url 'manage_payment_details' property.id %}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150">
+                                <i class="fas fa-money-check-alt mr-1"></i> Manage Payment Details
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        {% if payments %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for payment in payments %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">${{ payment.amount|floatformat:2 }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ payment.due_date|date:"M d, Y" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ payment.payment_date|date:"M d, Y"|default:"-" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if payment.status == 'paid' %}bg-green-100 text-green-800
+                                                {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                                {% elif payment.status == 'overdue' %}bg-red-100 text-red-800
+                                                {% elif payment.status == 'cancelled' %}bg-gray-100 text-gray-800
+                                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                {{ payment.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{% url 'payment_detail' payment.id %}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                            {% if is_landlord and payment.status != 'paid' and payment.status != 'cancelled' %}
+                                                <a href="{% url 'edit_payment' payment.id %}" class="text-yellow-600 hover:text-yellow-900 ml-2">Edit</a>
+                                                <a href="{% url 'mark_payment_completed' payment.id %}" class="text-green-600 hover:text-green-900 ml-2">Mark Paid</a>
+                                            {% elif is_tenant and payment.status != 'paid' and payment.status != 'cancelled' %}
+                                                <a href="{% url 'tenant_make_payment' payment.id %}" class="text-blue-600 hover:text-blue-900 ml-2">Pay Now</a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="bg-gray-50 p-4 rounded-md text-center">
+                            <p class="text-gray-600">No payment records found for this property.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notices Tab -->
+                    <div class="tab-pane fade" id="notices" role="tabpanel" aria-labelledby="notices-tab">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-700">Notices</h3>
+                            {% if is_landlord %}
+                            <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150" data-bs-toggle="modal" data-bs-target="#sendNoticeModal">
+                                + Send New Notice
+                            </button>
+                            {% endif %}
+                        </div>
+                        
+                        {% if notices %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Sent</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for notice in notices %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900 truncate w-48" title="{{ notice.subject }}">
+                                                <a href="{% url 'notice_detail' notice.id %}" class="text-indigo-600 hover:underline">{{ notice.subject }}</a>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ notice.get_notice_type_display }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ notice.created_at|date:"M d, Y" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if notice.status == 'sent' %}bg-blue-100 text-blue-800
+                                                {% elif notice.status == 'viewed' %}bg-yellow-100 text-yellow-800
+                                                {% elif notice.status == 'resolved' %}bg-green-100 text-green-800
+                                                {% elif notice.status == 'archived' %}bg-gray-100 text-gray-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ notice.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{% url 'notice_detail' notice.id %}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                            {% if is_landlord and notice.status != 'resolved' and notice.status != 'archived' %}
+                                                <a href="{% url 'edit_notice' notice.id %}" class="text-yellow-600 hover:text-yellow-900 ml-2">Edit</a>
+                                                <a href="{% url 'mark_notice_resolved' notice.id %}" class="text-green-600 hover:text-green-900 ml-2">Resolve</a>
+                                            {% elif is_tenant and notice.status == 'sent' %}
+                                                <a href="{% url 'mark_notice_viewed' notice.id %}" class="text-blue-600 hover:text-blue-900 ml-2">Mark Viewed</a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="bg-gray-50 p-4 rounded-md text-center">
+                            <p class="text-gray-600">No notices found for this property.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Property Request Modal (for Tenants) -->
@@ -190,6 +348,95 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Add Payment Modal (for Landlords) -->
+    {% if is_landlord and active_agreement %}
+    <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" action="{% url 'create_payment' agreement_id=active_agreement.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="rental_agreement" value="{{ active_agreement.id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-xl font-semibold" id="addPaymentModalLabel">Record New Payment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ active_agreement.rent_amount }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="due_date" class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="payment_method" name="payment_method">
+                                <option value="cash">Cash</option>
+                                <option value="check">Check</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600">Record Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Send Notice Modal (for Landlords) -->
+    {% if is_landlord and active_agreement %}
+    <div class="modal fade" id="sendNoticeModal" tabindex="-1" aria-labelledby="sendNoticeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form method="post" action="{% url 'create_notice' agreement_id=active_agreement.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="rental_agreement" value="{{ active_agreement.id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-xl font-semibold" id="sendNoticeModalLabel">Send New Notice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="subject" name="subject" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notice_type" class="form-label">Notice Type</label>
+                            <select class="form-select" id="notice_type" name="notice_type">
+                                <option value="payment_reminder">Payment Reminder</option>
+                                <option value="late_payment">Late Payment</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="inspection">Inspection</option>
+                                <option value="lease_violation">Lease Violation</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary bg-blue-500 hover:bg-blue-600 border-blue-500 hover:border-blue-600">Send Notice</button>
                     </div>
                 </form>
             </div>

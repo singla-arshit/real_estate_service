@@ -1,5 +1,5 @@
 from django.db import models
-from properties.models import RentalAgreement
+from properties.models import RentalAgreement, Property
 from accounts.models import Landlord, Tenant
 
 
@@ -7,9 +7,9 @@ class Payment(models.Model):
     """Model for rent payments."""
     PAYMENT_STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-        ('refunded', 'Refunded'),
+        ('paid', 'Paid'),
+        ('overdue', 'Overdue'),
+        ('cancelled', 'Cancelled'),
     ]
     
     PAYMENT_METHOD_CHOICES = [
@@ -18,6 +18,7 @@ class Payment(models.Model):
         ('bank_transfer', 'Bank Transfer'),
         ('cash', 'Cash'),
         ('check', 'Check'),
+        ('upi', 'UPI'),
         ('other', 'Other'),
     ]
     
@@ -50,6 +51,8 @@ class Notice(models.Model):
         ('inspection', 'Property Inspection'),
         ('general', 'General Notice'),
         ('complaint', 'Complaint'),
+        ('payment_reminder', 'Payment Reminder'),
+        ('late_payment', 'Late Payment Notice'),
     ]
     
     NOTICE_STATUS_CHOICES = [
@@ -82,3 +85,27 @@ class Notice(models.Model):
         
         if (self.recipient_landlord and self.recipient_tenant) or (not self.recipient_landlord and not self.recipient_tenant):
             raise ValueError("Either recipient_landlord or recipient_tenant must be set, but not both.")
+
+
+class PaymentDetail(models.Model):
+    """Model for landlord payment details including UPI information."""
+    PAYMENT_METHOD_CHOICES = [
+        ('bank_transfer', 'Bank Transfer'),
+        ('upi', 'UPI'),
+        ('other', 'Other'),
+    ]
+    
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='payment_details')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    account_holder_name = models.CharField(max_length=100, blank=True, null=True)
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    account_number = models.CharField(max_length=50, blank=True, null=True)
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True)
+    upi_id = models.CharField(max_length=50, blank=True, null=True)
+    upi_qr_code = models.ImageField(upload_to='upi_qr_codes/', blank=True, null=True)
+    additional_instructions = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Payment Details for {self.property.title}"

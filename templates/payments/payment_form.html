@@ -13,29 +13,103 @@
         {% endif %}
     </h2>
     
-    <form method="post">
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 mb-4 text-sm rounded-lg {% if message.tags %}{{ message.tags }}{% endif %}" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700">
+                        {{ form.non_field_errors|join:". " }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="space-y-6">
-            {{ form|crispy }}
+            {% for field in form %}
+            <div class="mb-4">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% if field.errors %}
+                <div class="mt-1 text-sm text-red-600">
+                    {{ field.errors|join:". " }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
         </div>
 
         <div class="mt-10 flex justify-end space-x-3">
-            <a href="{% if form.instance.pk %}{% url 'payment_detail' form.instance.pk %}{% else %}{% url 'payment_list' %}{% endif %}" 
+            <a href="{% if form.instance.pk %}{% url 'payment_detail' form.instance.pk %}{% else %}{% if rental_agreement %}{% url 'property_detail' rental_agreement.property.id %}{% else %}{% url 'payment_list' %}{% endif %}{% endif %}" 
                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
                 Cancel
             </a>
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150">
                 {% if form.instance.pk %}Save Changes{% else %}Record Payment{% endif %}
             </button>
         </div>
     </form>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Logic to potentially auto-fill amount based on selected rental agreement
+        // Format dates to YYYY-MM-DD for date inputs
+        const formatDate = (date) => {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        };
+
+        // Set today's date as default for date fields if they're empty
+        const today = new Date();
+        const todayFormatted = formatDate(today);
+        
+        const paymentDateInput = document.getElementById('id_payment_date');
+        const dueDateInput = document.getElementById('id_due_date');
+        
+        if (paymentDateInput && !paymentDateInput.value) {
+            paymentDateInput.value = todayFormatted;
+        }
+        
+        if (dueDateInput && !dueDateInput.value) {
+            // Set due date to end of current month by default
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            dueDateInput.value = formatDate(lastDay);
+        }
+
+        // Auto-fill amount when rental agreement is selected
         const rentalAgreementSelect = document.getElementById('id_rental_agreement');
         const amountInput = document.getElementById('id_amount');
 
@@ -43,19 +117,16 @@
             rentalAgreementSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const rentAmount = selectedOption.getAttribute('data-rent-amount');
-                if (rentAmount && !amountInput.value) { // Only fill if amount is empty
-                    amountInput.value = rentAmount;
+                if (rentAmount && !amountInput.value) {
+                    amountInput.value = parseFloat(rentAmount).toFixed(2);
                 }
             });
 
-            // Trigger change on load if an agreement is pre-selected (e.g. editing)
+            // Trigger change on load if an agreement is pre-selected
             if (rentalAgreementSelect.value) {
-                const event = new Event('change');
-                rentalAgreementSelect.dispatchEvent(event);
+                rentalAgreementSelect.dispatchEvent(new Event('change'));
             }
         }
     });
 </script>
-{% endblock %}
-
 {% endblock %}

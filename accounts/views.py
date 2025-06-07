@@ -6,7 +6,7 @@ from django.utils import timezone
 from .models import User, Landlord, Tenant
 from .forms import UserRegistrationForm, LandlordRegistrationForm, TenantRegistrationForm, UserEditForm, LandlordEditForm, TenantEditForm
 from properties.models import Property, RentalAgreement, PropertyRequest
-from payments.models import Payment, Notice
+from payments.models import Payment, Notice, PaymentDetail
 
 
 def register(request):
@@ -196,18 +196,23 @@ def landlord_dashboard(request):
 
 @login_required
 def tenant_dashboard(request):
-    """Dashboard view for tenants."""
+    """View for tenant dashboard."""
     if not request.user.is_tenant:
         messages.error(request, 'Access denied. You are not registered as a tenant.')
         return redirect('dashboard')
     
     tenant = get_object_or_404(Tenant, user=request.user)
     
-    # Get rental agreements
+    # Get all rental agreements for the tenant
     rental_agreements = RentalAgreement.objects.filter(tenant=tenant)
     
-    # Get active rental agreement
-    active_agreement = rental_agreements.filter(status='active').first()
+    # Debug: Print all rental agreements and their statuses
+    print(f"Debug - All rental agreements for tenant {tenant.id}:")
+    for ra in rental_agreements:
+        print(f"- Agreement ID: {ra.id}, Status: {ra.status}, Property: {ra.property.title}")
+    
+    # Get active rental agreement (case-insensitive match)
+    active_agreement = rental_agreements.filter(status__iexact='active').first()
     
     # Get rented properties
     rented_properties = Property.objects.filter(rental_agreements__tenant=tenant, status='rented')
@@ -215,14 +220,24 @@ def tenant_dashboard(request):
     # Get property requests (all statuses to show the tenant their request history)
     property_requests = PropertyRequest.objects.filter(tenant=tenant).order_by('-created_at')
     
-    # Get recent payments
-    recent_payments = Payment.objects.filter(rental_agreement__tenant=tenant).order_by('-payment_date')[:5]
+    # Get recent payments - Use select_related to improve performance and ensure latest data
+    recent_payments = Payment.objects.select_related('rental_agreement', 'rental_agreement__property').filter(
+        rental_agreement__tenant=tenant
+    ).order_by('-due_date')[:5]  # Order by due date instead of payment date to show most relevant first
     
-    # Get upcoming payments
-    upcoming_payments = Payment.objects.filter(
+    # Get upcoming payments - Use select_related and ensure we're getting the latest data
+    upcoming_payments = Payment.objects.select_related('rental_agreement', 'rental_agreement__property').filter(
         rental_agreement__tenant=tenant,
         status='pending'
     ).order_by('due_date')[:5]
+    
+    # Get the next payment due (first upcoming payment)
+    next_payment = upcoming_payments.first()
+    
+    # Get payment details for the active property if exists
+    payment_details = None
+    if active_agreement and active_agreement.property:
+        payment_details = PaymentDetail.objects.filter(property=active_agreement.property).first()
     
     # Get unresolved notices
     unresolved_notices = Notice.objects.filter(
@@ -253,6 +268,8 @@ def tenant_dashboard(request):
         'pending_requests_count': property_requests.filter(status='pending').count(),
         'approved_requests_count': property_requests.filter(status='approved').count(),
         'rejected_requests_count': property_requests.filter(status='rejected').count(),
+        'next_payment': next_payment,
+        'payment_details': payment_details,
     }
     
     return render(request, 'accounts/tenant_dashboard.html', context)

@@ -47,10 +47,10 @@
         <div class="mb-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-3">Associated Rental Agreement</h2>
             <div class="bg-gray-50 p-4 rounded-md">
-                <p><strong class="text-gray-600">Property:</strong> <a href="{% url 'property_detail' payment.rental_agreement.property.id %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.property.title }}</a></p>
-                <p><strong class="text-gray-600">Tenant:</strong> <a href="{% url 'profile_detail' payment.rental_agreement.tenant.user.username %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.tenant.user.get_full_name|default:payment.rental_agreement.tenant.user.username }}</a></p>
-                <p><strong class="text-gray-600">Landlord:</strong> <a href="{% url 'profile_detail' payment.rental_agreement.property.landlord.user.username %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.property.landlord.user.get_full_name|default:payment.rental_agreement.property.landlord.user.username }}</a></p>
-                <p><strong class="text-gray-600">Agreement ID:</strong> <a href="{% url 'rental_agreement_detail' payment.rental_agreement.id %}" class="text-indigo-600 hover:underline">{{ payment.rental_agreement.id }}</a></p>
+                <p><strong class="text-gray-600">Property:</strong> {{ payment.rental_agreement.property.title }}</p>
+                <p><strong class="text-gray-600">Tenant:</strong> {{ payment.rental_agreement.tenant.user.get_full_name|default:payment.rental_agreement.tenant.user.username }}</p>
+                <p><strong class="text-gray-600">Landlord:</strong> {{ payment.rental_agreement.property.landlord.user.get_full_name|default:payment.rental_agreement.property.landlord.user.username }}</p>
+                <p><strong class="text-gray-600">Agreement ID:</strong> {{ payment.rental_agreement.id }}</p>
             </div>
         </div>
 
@@ -104,7 +104,7 @@
     </div>
 
     <!-- Make Payment Modal (for Tenant - Simulated) -->
-    {% if user.is_authenticated and user.is_tenant and payment.rental_agreement.tenant.user == user and (payment.status == 'pending' or payment.status == 'overdue') %}
+    {% if user.is_authenticated and user.is_tenant and payment.rental_agreement.tenant.user == user and payment.status in 'pending overdue' %}
     <div class="modal fade" id="makePaymentModal" tabindex="-1" aria-labelledby="makePaymentModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Make Payment - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md mt-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-credit-card mr-2"></i>Make Payment
+        </h2>
+        <a href="{% url 'payment_list' %}" class="text-sm text-indigo-600 hover:underline flex items-center">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Payments
+        </a>
+    </div>
+    
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
+        <div class="p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">{{ payment.rental_agreement.property.title }}</h3>
+                    <p class="text-gray-600">{{ payment.rental_agreement.property.address|truncatechars:50 }}</p>
+                </div>
+                <div class="mt-4 md:mt-0 text-right">
+                    <p class="text-3xl font-bold text-indigo-600">${{ payment.amount|floatformat:2 }}</p>
+                    <p class="text-sm text-gray-500">Due by {{ payment.due_date|date:"F d, Y" }}</p>
+                </div>
+            </div>
+            
+            <div class="bg-indigo-50 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-indigo-100 p-2 rounded-full">
+                        <i class="fas fa-info-circle text-indigo-600"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-indigo-700">
+                            Please make the payment before the due date to avoid late fees. Your landlord has provided the following payment options:
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if payment_details %}
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-university mr-2 text-indigo-600"></i>
+                Landlord's Payment Information
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column: Payment Details -->
+                <div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-700 mb-3">
+                            <i class="fas fa-info-circle text-indigo-600 mr-2"></i>
+                            {{ payment_details.get_payment_method_display }}
+                        </h4>
+                        
+                        <div class="space-y-3">
+                            {% if payment_details.payment_method == 'bank_transfer' %}
+                                <div>
+                                    <p class="text-xs text-gray-500">Account Holder</p>
+                                    <p class="font-medium">{{ payment_details.account_holder_name }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Bank Name</p>
+                                    <p class="font-medium">{{ payment_details.bank_name }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Account Number</p>
+                                        <p class="font-medium">{{ payment_details.account_number }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">IFSC Code</p>
+                                        <p class="font-mono">{{ payment_details.ifsc_code }}</p>
+                                    </div>
+                                </div>
+                            {% elif payment_details.payment_method == 'upi' %}
+                                <div>
+                                    <p class="text-xs text-gray-500">UPI ID</p>
+                                    <p class="font-medium text-lg">{{ payment_details.upi_id }}</p>
+                                </div>
+                                <div class="mt-2">
+                                    <button onclick="copyToClipboard('{{ payment_details.upi_id }}')" 
+                                            class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center">
+                                        <i class="far fa-copy mr-1"></i> Copy UPI ID
+                                    </button>
+                                </div>
+                            {% endif %}
+                            
+                            {% if payment_details.additional_instructions %}
+                            <div class="mt-4 pt-3 border-t border-gray-200">
+                                <p class="text-xs text-gray-500 mb-1">Additional Instructions</p>
+                                <p class="text-sm text-gray-700">{{ payment_details.additional_instructions|linebreaksbr }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column: QR Code & Payment Actions -->
+                <div class="flex flex-col items-center justify-center">
+                    {% if payment_details.upi_qr_code and payment_details.payment_method == 'upi' %}
+                        <div class="text-center">
+                            <p class="text-sm text-gray-600 mb-2">Scan QR Code to Pay</p>
+                            <div class="p-3 bg-white border border-gray-200 rounded-lg inline-block">
+                                <img src="{{ payment_details.upi_qr_code.url }}" 
+                                     alt="UPI QR Code" 
+                                     class="w-48 h-48 object-contain">
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Amount: ${{ payment.amount|floatformat:2 }}</p>
+                            <p class="text-xs text-gray-500">Pay to: {{ payment_details.account_holder_name|default:payment.rental_agreement.property.landlord.user.get_full_name }}</p>
+                        </div>
+                    {% else %}
+                        <div class="text-center p-6 bg-gray-50 rounded-lg w-full">
+                            <div class="text-gray-400 mb-3">
+                                <i class="fas fa-qrcode text-5xl"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">
+                                No QR code available. Please use the payment details provided.
+                            </p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-6 w-full">
+                        <form method="post" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="payment_method" value="{{ payment_details.payment_method }}">
+                            <button type="submit" 
+                                    class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                I've Made the Payment
+                            </button>
+                        </form>
+                        
+                        <div class="mt-3 text-center">
+                            <p class="text-xs text-gray-500">
+                                After making the payment, click the button above to confirm.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    No payment details have been provided by the landlord for this property. 
+                    Please contact your landlord for payment instructions.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Payment Confirmation Section (Only shown if no payment details available) -->
+    {% if not payment_details %}
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-credit-card mr-2 text-indigo-600"></i>
+            Payment Confirmation
+        </h3>
+        
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        No payment details available. Please confirm with your landlord before making the payment.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="payment_method" class="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Method
+                </label>
+                <select name="payment_method" id="payment_method" 
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="cash">Cash</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="transaction_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    Transaction/Reference ID (if any)
+                </label>
+                <input type="text" name="transaction_id" id="transaction_id"
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                       placeholder="e.g., UPI transaction ID, bank reference number">
+            </div>
+            
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Notes (Optional)
+                </label>
+                <textarea name="notes" id="notes" rows="3"
+                          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          placeholder="Any additional information about this payment"></textarea>
+            </div>
+            
+            <div class="pt-2">
+                <button type="submit" 
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    Confirm Payment Made
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+            <p class="text-sm text-gray-600">Clicking "Confirm Payment" will mark this payment as 'Paid'.</p>
+        </div>
+        
+        <div class="mt-6 flex justify-end space-x-3">
+            <a href="{% url 'payment_detail' payment.id %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
+                Cancel
+            </a>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+                Confirm Payment
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

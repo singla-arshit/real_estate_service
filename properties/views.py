@@ -50,18 +50,63 @@ def property_detail(request, property_id):
     
     # Check if the user is a tenant and has already requested this property
     user_has_requested = False
-    if request.user.is_authenticated and hasattr(request.user, 'tenant_profile'):
-        tenant = request.user.tenant_profile
-        user_has_requested = PropertyRequest.objects.filter(
-            property=property_obj,
-            tenant=tenant,
-            status__in=['pending', 'approved']
-        ).exists()
+    active_agreement = None
+    payments = None
+    notices = None
+    is_landlord = False
+    is_tenant = False
+    
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'landlord_profile') and property_obj.landlord.user == request.user:
+            is_landlord = True
+            # Get active rental agreement for this property
+            active_agreement = RentalAgreement.objects.filter(
+                property=property_obj,
+                status='active'
+            ).first()
+            
+            # If there's an active agreement, get payments and notices
+            if active_agreement:
+                from payments.models import Payment, Notice
+                payments = Payment.objects.filter(rental_agreement=active_agreement).order_by('-due_date')
+                notices = Notice.objects.filter(rental_agreement=active_agreement).order_by('-created_at')
+                
+        elif hasattr(request.user, 'tenant_profile'):
+            tenant = request.user.tenant_profile
+            user_has_requested = PropertyRequest.objects.filter(
+                property=property_obj,
+                tenant=tenant,
+                status__in=['pending', 'approved']
+            ).exists()
+            
+            # Check if this tenant is renting this property
+            active_agreement = RentalAgreement.objects.filter(
+                property=property_obj,
+                tenant=tenant,
+                status='active'
+            ).first()
+            
+            if active_agreement:
+                is_tenant = True
+                from payments.models import Payment, Notice
+                payments = Payment.objects.filter(rental_agreement=active_agreement).order_by('-due_date')
+                notices = Notice.objects.filter(rental_agreement=active_agreement).order_by('-created_at')
+    
+    # Get request form for tenants
+    request_form = None
+    if request.user.is_authenticated and hasattr(request.user, 'tenant_profile') and property_obj.status == 'available':
+        request_form = PropertyRequestForm()
     
     return render(request, 'properties/property_detail.html', {
         'property': property_obj,
         'images': images,
         'user_has_requested': user_has_requested,
+        'active_agreement': active_agreement,
+        'payments': payments,
+        'notices': notices,
+        'is_landlord': is_landlord,
+        'is_tenant': is_tenant,
+        'request_form': request_form,
     })
 
 
@@ -454,7 +499,7 @@ def approve_request(request, request_id):
             end_date=property_request.requested_move_in_date.replace(year=property_request.requested_move_in_date.year + 1),
             rent_amount=property_obj.rent_amount,
             security_deposit=property_obj.security_deposit,
-            status='pending',
+            status='active',
             terms_and_conditions='Standard rental agreement terms and conditions apply.'
         )
         agreement.save()

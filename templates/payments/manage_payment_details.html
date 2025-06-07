@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Manage Payment Details - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-gray-800 text-center mb-8">
+        Manage Payment Details for {{ property.title }}
+    </h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="space-y-6">
+            {{ form|crispy }}
+        </div>
+
+        {% if payment_details.upi_qr_code %}
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Current UPI QR Code</h3>
+            <div class="flex justify-center">
+                <img src="{{ payment_details.upi_qr_code.url }}" alt="UPI QR Code" class="max-w-xs border border-gray-300 rounded-lg">
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mt-10 flex justify-end space-x-3">
+            <a href="{% url 'property_detail' property.id %}" 
+               class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">
+                Cancel
+            </a>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150">
+                Save Payment Details
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
