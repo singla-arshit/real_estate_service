@@ -6,10 +6,10 @@
 {% block content %}
 <div class="container mx-auto py-8">
     <div class="flex flex-col md:flex-row justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Available Properties</h1>
+        <h1 class="text-3xl font-bold text-white mb-4 md:mb-0">Available Properties</h1>
         {% if user.is_authenticated and user.is_landlord %}
-            <a href="{% url 'create_property' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150">
-                + Add New Property
+            <a href="{% url 'create_property' %}" class="bg-orange-500 hover:bg-orange-600 text-dark font-bold py-2 px-4 rounded-lg shadow transition duration-150">
+                <i class="fas fa-plus mr-1"></i> Add New Property
             </a>
         {% endif %}
     </div>
@@ -47,28 +47,28 @@
     {% if properties %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {% for property in properties %}
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 ease-in-out">
+                <div class="bg-black rounded-lg border border-gray-800 overflow-hidden transform hover:scale-105 transition-transform duration-300 ease-in-out">
                     <a href="{% url 'property_detail' property.id %}">
                         {% if property.images.first %}
                             <img src="{{ property.images.first.image.url }}" alt="{{ property.title }}" class="w-full h-56 object-cover">
                         {% else %}
-                            <img src="{% static 'images/default_property.svg' %}" alt="Default property image" class="w-full h-56 object-cover bg-gray-200">
+                            <img src="{% static 'images/default_property.svg' %}" alt="Default property image" class="w-full h-56 object-cover bg-gray-800">
                         {% endif %}
                     </a>
                     <div class="p-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-2 truncate hover:text-indigo-600">
+                        <h2 class="text-xl font-semibold text-white mb-2 truncate hover:text-orange-500">
                             <a href="{% url 'property_detail' property.id %}">{{ property.title }}</a>
                         </h2>
-                        <p class="text-sm text-gray-600 mb-1 truncate"><i class="fas fa-map-marker-alt mr-1 text-indigo-500"></i>{{ property.address }}, {{ property.city }}</p>
-                        <p class="text-sm text-gray-600 mb-3"><i class="fas fa-building mr-1 text-indigo-500"></i>{{ property.get_property_type_display }}</p>
+                        <p class="text-sm text-gray-400 mb-1 truncate"><i class="fas fa-map-marker-alt mr-1 text-orange-500"></i>{{ property.address }}, {{ property.city }}</p>
+                        <p class="text-sm text-gray-400 mb-3"><i class="fas fa-building mr-1 text-orange-500"></i>{{ property.get_property_type_display }}</p>
                         
                         <div class="flex justify-between items-center mb-3">
-                            <p class="text-lg font-bold text-green-600">${{ property.rent_amount|floatformat:2 }}/month</p>
+                            <p class="text-lg font-bold text-green-500">${{ property.rent_amount|floatformat:2 }}/month</p>
                             <span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full 
-                                {% if property.status == 'available' %}bg-green-500 text-white
-                                {% elif property.status == 'rented' %}bg-blue-600 text-white
-                                {% elif property.status == 'maintenance' %}bg-yellow-500 text-white
-                                {% else %}bg-gray-500 text-white{% endif %}">
+                                {% if property.status == 'available' %}bg-green-500 text-dark
+                                {% elif property.status == 'rented' %}bg-blue-500 text-dark
+                                {% elif property.status == 'maintenance' %}bg-yellow-500 text-dark
+                                {% else %}bg-gray-500 text-dark{% endif %}">
                                 {% if property.status == 'available' %}
                                     <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
                                     AVAILABLE
@@ -79,25 +79,25 @@
                                     <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
                                     MAINTENANCE
                                 {% else %}
-                                    <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                    <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 102 0V6a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
                                     {{ property.get_status_display|upper }}
                                 {% endif %}
                             </span>
                         </div>
 
-                        <div class="text-xs text-gray-500 mb-3 border-t pt-2">
+                        <div class="text-xs text-gray-400 mb-3 border-t border-gray-800 pt-2">
                             <span class="mr-3"><i class="fas fa-bed mr-1"></i>{{ property.bedrooms }} Beds</span>
                             <span class="mr-3"><i class="fas fa-bath mr-1"></i>{{ property.bathrooms }} Baths</span>
                             <span><i class="fas fa-ruler-combined mr-1"></i>{{ property.square_feet }} sq ft</span>
                         </div>
 
-                        <a href="{% url 'property_detail' property.id %}" class="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">
-                            View Details
+                        <a href="{% url 'property_detail' property.id %}" class="block w-full text-center bg-orange-500 hover:bg-orange-600 text-dark font-semibold py-2 px-4 rounded-lg transition duration-150">
+                            <i class="fas fa-info-circle mr-1"></i> View Details
                         </a>
                         {% if user.is_authenticated and user.is_landlord and property.landlord.user == user %}
                             <div class="mt-2 text-center">
-                                <a href="{% url 'edit_property' property.id %}" class="text-xs text-yellow-600 hover:text-yellow-800 mr-2">Edit</a>
-                                <a href="{% url 'delete_property' property.id %}" class="text-xs text-red-600 hover:text-red-800">Delete</a>
+                                <a href="{% url 'edit_property' property.id %}" class="text-xs text-orange-500 hover:text-orange-600 mr-2">Edit</a>
+                                <a href="{% url 'delete_property' property.id %}" class="text-xs text-red-500 hover:text-red-600">Delete</a>
                             </div>
                         {% endif %}
                     </div>
@@ -110,24 +110,24 @@
             <div class="mt-12 flex justify-center">
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                     {% if properties.has_previous %}
-                        <a href="?page={{ properties.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <a href="?page={{ properties.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-800 bg-black text-sm font-medium text-gray-400 hover:bg-gray-700">
                             <span class="sr-only">Previous</span>
                             <i class="fas fa-chevron-left h-5 w-5"></i>
                         </a>
                     {% endif %}
                     {% for num in properties.paginator.page_range %}
                         {% if properties.number == num %}
-                            <a href="#" aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            <a href="#" aria-current="page" class="z-10 bg-orange-500 border-orange-500 text-dark relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                 {{ num }}
                             </a>
                         {% else %}
-                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="bg-black border-gray-800 text-gray-400 hover:bg-gray-700 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                 {{ num }}
                             </a>
                         {% endif %}
                     {% endfor %}
                     {% if properties.has_next %}
-                        <a href="?page={{ properties.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <a href="?page={{ properties.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-800 bg-black text-sm font-medium text-gray-400 hover:bg-gray-700">
                             <span class="sr-only">Next</span>
                             <i class="fas fa-chevron-right h-5 w-5"></i>
                         </a>
@@ -139,15 +139,15 @@
     {% else %}
         <div class="text-center py-12">
             <img src="{% static 'images/no_properties_found.svg' %}" alt="No properties found" class="mx-auto h-48 w-auto mb-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-2">No Properties Found</h2>
-            <p class="text-gray-500 mb-6">There are currently no properties matching your criteria or no properties listed yet.</p>
+            <h2 class="text-2xl font-semibold text-white mb-2">No Properties Found</h2>
+            <p class="text-gray-400 mb-6">There are currently no properties matching your criteria or no properties listed yet.</p>
             {% if user.is_authenticated and user.is_landlord %}
-                <a href="{% url 'create_property' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow transition duration-150">
-                    Be the first to Add a Property
+                <a href="{% url 'create_property' %}" class="inline-block bg-orange-500 hover:bg-orange-600 text-dark font-semibold py-2 px-4 rounded-lg">
+                    <i class="fas fa-plus mr-1"></i> Add Your First Property
                 </a>
             {% else %}
-                 <a href="{% url 'home' %}" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow transition duration-150">
-                    Back to Home
+                <a href="{% url 'property_list' %}" class="inline-block bg-orange-500 hover:bg-orange-600 text-dark font-semibold py-2 px-4 rounded-lg">
+                    <i class="fas fa-redo mr-1"></i> Refresh Search
                 </a>
             {% endif %}
         </div>

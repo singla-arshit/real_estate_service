@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,21 +9,25 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Tailwind CSS (using Play CDN for simplicity, for production use a build step) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+<body class="bg-black text-white font-sans leading-normal tracking-normal">
 
-    <nav class="bg-white shadow-lg">
+    <nav class="bg-black/90 backdrop-blur-sm shadow-lg border-b border-gray-800">
         <div class="container mx-auto px-6 py-3 md:flex md:justify-between md:items-center">
             <div class="flex items-center justify-between">
                 <div>
-                    <a class="text-xl font-bold text-gray-800 md:text-2xl hover:text-gray-700" href="{% url 'home' %}">MicroREMS</a>
+                    <a class="text-xl font-bold text-white md:text-2xl hover:text-orange-500" href="{% url 'home' %}">
+                        <span class="text-orange-500">Micro</span>REMS
+                    </a>
                 </div>
                 <!-- Mobile menu button -->
                 <div class="flex md:hidden">
-                    <button type="button" class="text-gray-500 hover:text-gray-600 focus:outline-none focus:text-gray-600" aria-label="toggle menu" id="mobile-menu-button">
+                    <button type="button" class="text-white hover:text-orange-500 focus:outline-none focus:text-orange-500" aria-label="toggle menu" id="mobile-menu-button">
                         <svg viewBox="0 0 24 24" class="h-6 w-6 fill-current">
                             <path fill-rule="evenodd" d="M4 5h16a1 1 0 0 1 0 2H4a1 1 0 1 1 0-2zm0 6h16a1 1 0 0 1 0 2H4a1 1 0 0 1 0-2zm0 6h16a1 1 0 0 1 0 2H4a1 1 0 0 1 0-2z"></path>
                         </svg>
@@ -34,24 +38,24 @@
             <!-- Mobile Menu open: "block", Menu closed: "hidden" -->
             <div class="md:flex items-center hidden" id="mobile-menu">
                 <div class="flex flex-col md:flex-row md:mx-6">
-                    <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'property_list' %}">Properties</a>
+                    <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'property_list' %}">Properties</a>
                     {% if user.is_authenticated %}
                         {% if user.is_landlord %}
-                            <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'landlord_dashboard' %}">Landlord Dashboard</a>
-                            <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'create_property' %}">Add Property</a>
+                            <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'landlord_dashboard' %}">Landlord Dashboard</a>
+                            <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'create_property' %}">Add Property</a>
                         {% elif user.is_tenant %}
-                            <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'tenant_dashboard' %}">Tenant Dashboard</a>
+                            <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'tenant_dashboard' %}">Tenant Dashboard</a>
                         {% else %}
-                             <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'dashboard' %}">Dashboard</a>
+                             <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'dashboard' %}">Dashboard</a>
                         {% endif %}
-                        <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'profile' %}">Profile</a>
+                        <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'profile' %}">Profile</a>
                         <form method="post" action="{% url 'logout' %}" class="inline">
                             {% csrf_token %}
-                            <button type="submit" class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0">Logout</button>
+                            <button type="submit" class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0">Logout</button>
                         </form>
                     {% else %}
-                        <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'login' %}">Login</a>
-                        <a class="my-1 text-sm text-gray-700 font-medium hover:text-indigo-500 md:mx-4 md:my-0" href="{% url 'register' %}">Register</a>
+                        <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'login' %}">Login</a>
+                        <a class="my-1 text-sm text-white font-medium hover:text-orange-500 md:mx-4 md:my-0" href="{% url 'register' %}">Register</a>
                     {% endif %}
                 </div>
             </div>
@@ -72,9 +76,34 @@
         {% endblock %}
     </div>
 
-    <footer class="bg-gray-800 text-white py-8 mt-auto">
-        <div class="container mx-auto px-6 text-center">
-            <p>&copy; {% now "Y" %} Micro Real Estate Management. All rights reserved.</p>
+    <footer class="bg-black text-white py-8 mt-auto">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">MicroREMS</h3>
+                    <p class="text-gray-400">Modern real estate management platform for landlords and tenants.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{% url 'property_list' %}" class="text-white hover:text-orange-500">Properties</a></li>
+                        <li><a href="{% url 'about' %}" class="text-white hover:text-orange-500">About Us</a></li>
+                        <li><a href="{% url 'contact' %}" class="text-white hover:text-orange-500">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Connect</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-white hover:text-orange-500"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-white hover:text-orange-500"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white hover:text-orange-500"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white hover:text-orange-500"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 text-center border-t border-gray-800 pt-4">
+                <p class="text-gray-400">&copy; {% now "Y" %} Micro Real Estate Management. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 
@@ -93,5 +122,32 @@
         }
     </script>
     {% block extra_scripts %}{% endblock %}
+    
+    <!-- Back to top button -->
+    <button onclick="topFunction()" id="backToTopBtn" title="Go to top" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-4" style="width: 50px; height: 50px; display: none;">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
+    <script>
+        // Back to top button
+        const backToTopButton = document.getElementById('backToTopBtn');
+        
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopButton.style.display = 'block';
+            } else {
+                backToTopButton.style.display = 'none';
+            }
+        };
+        
+        // When the user clicks on the button, scroll to the top of the document
+        function topFunction() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    </script>
 </body>
 </html>

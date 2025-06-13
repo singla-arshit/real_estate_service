@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us - MicroREMS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-black p-8 rounded-lg border border-gray-800 mt-10">
+    <h1 class="text-3xl font-bold text-white text-center mb-8">About MicroREMS</h1>
+    
+    <div class="space-y-6">
+        <p class="text-white text-lg">
+            MicroREMS is a modern real estate management platform designed to streamline property management for landlords and 
+            enhance the rental experience for tenants. Our mission is to create a seamless and efficient rental ecosystem.
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-4">For Landlords</h2>
+                <ul class="list-disc list-inside text-gray-400">
+                    <li>Manage your properties easily</li>
+                    <li>Screen tenants efficiently</li>
+                    <li>Handle payments securely</li>
+                    <li>Track maintenance requests</li>
+                </ul>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-4">For Tenants</h2>
+                <ul class="list-disc list-inside text-gray-400">
+                    <li>Find your perfect home</li>
+                    <li>Submit maintenance requests</li>
+                    <li>Pay rent online</li>
+                    <li>Communicate with landlords</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

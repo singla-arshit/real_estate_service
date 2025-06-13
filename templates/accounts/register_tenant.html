@@ -4,8 +4,8 @@
 {% block title %}Tenant Registration - MicroREMS{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
-    <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Register as a Tenant</h2>
+<div class="max-w-2xl mx-auto bg-black p-8 rounded-lg border border-gray-800 mt-10">
+    <h2 class="text-2xl font-bold text-white text-center mb-6">Register as a Tenant</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="space-y-4">
@@ -13,18 +13,18 @@
             {{ tenant_form|crispy }}
         </div>
         <div class="mt-8">
-            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
-                Register as Tenant
+            <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-dark font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
+                <i class="fas fa-user-plus mr-2"></i> Register as Tenant
             </button>
         </div>
     </form>
     <div class="mt-6 text-center">
-        <p class="text-gray-600">Already have an account? 
-            <a href="{% url 'login' %}" class="text-indigo-600 hover:text-indigo-800 font-semibold">Login here</a>.
+        <p class="text-gray-400">Already have an account? 
+            <a href="{% url 'login' %}" class="text-orange-500 hover:text-orange-600 font-semibold">Login here</a>.
         </p>
-        <p class="text-gray-600 mt-2">Not a tenant? 
-            <a href="{% url 'register_landlord' %}" class="text-indigo-600 hover:text-indigo-800 font-semibold">Register as a Landlord</a> or 
-            <a href="{% url 'register' %}" class="text-gray-600 hover:text-gray-800 font-semibold">choose account type</a>.
+        <p class="text-gray-400 mt-2">Not a tenant? 
+            <a href="{% url 'register_landlord' %}" class="text-orange-500 hover:text-orange-600 font-semibold">Register as a Landlord</a> or 
+            <a href="{% url 'register' %}" class="text-gray-400 hover:text-gray-200 font-semibold">choose account type</a>.
         </p>
     </div>
 </div>
