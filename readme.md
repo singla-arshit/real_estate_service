@@ -126,6 +126,11 @@ MicroREMS is a lightweight, Django-based web application designed for small-scal
 *   Consider internationalization and localization.
 *   Deployment configurations (e.g., Docker, Gunicorn, Nginx).
 
+## images 
+<img width="1205" height="873" alt="image" src="https://github.com/user-attachments/assets/553fa71b-aa56-48b0-891a-bf474d95da0b" />
+
+
+
 ## Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
